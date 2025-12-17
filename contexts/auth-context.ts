@@ -54,11 +54,14 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-  };
+  await AsyncStorage.removeItem('authToken');
+  await AsyncStorage.removeItem('user');
+
+  global.authToken = undefined; // ✅ important
+  setToken(null);
+  setUser(null);
+};
+
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);

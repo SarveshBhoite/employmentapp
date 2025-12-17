@@ -13,7 +13,8 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [currentTime] = useState(new Date());
 
-  const { data: overview } = trpc.admin.getTodayAttendanceOverview.useQuery();
+  const { data: overview } =
+    trpc.admin.getTodayAttendanceOverview.useQuery();
 
   const markHolidayMutation = trpc.admin.markHoliday.useMutation({
     onSuccess: () => {
@@ -24,18 +25,23 @@ export default function AdminDashboard() {
     },
   });
 
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/employee/login');
+  };
+
   const handleMarkHoliday = () => {
-    Alert.alert(
-      'Mark Holiday',
-      'Mark today as a holiday for all employees?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => markHolidayMutation.mutate({ date: new Date(), description: 'Holiday' }),
-        },
-      ]
-    );
+    Alert.alert('Mark Holiday', 'Mark today as a holiday for all employees?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Confirm',
+        onPress: () =>
+          markHolidayMutation.mutate({
+            date: new Date(),
+            description: 'Holiday',
+          }),
+      },
+    ]);
   };
 
   const getGreeting = () => {
@@ -57,7 +63,7 @@ export default function AdminDashboard() {
           <TouchableOpacity style={styles.iconButton}>
             <Bell size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={logout}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
             <LogOut size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -66,19 +72,26 @@ export default function AdminDashboard() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.overviewCard}>
           <Text style={styles.overviewTitle}>Today&apos;s Attendance</Text>
+
           <View style={styles.overviewStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{overview?.totalEmployees || 0}</Text>
+              <Text style={styles.statValue}>
+                {overview?.totalEmployees || 0}
+              </Text>
               <Text style={styles.statLabel}>Total Employees</Text>
             </View>
+
             <View style={styles.statDivider} />
+
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: theme.colors.success }]}>
                 {overview?.presentToday || 0}
               </Text>
               <Text style={styles.statLabel}>Present</Text>
             </View>
+
             <View style={styles.statDivider} />
+
             <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: theme.colors.error }]}>
                 {overview?.absentToday || 0}
@@ -86,6 +99,7 @@ export default function AdminDashboard() {
               <Text style={styles.statLabel}>Absent</Text>
             </View>
           </View>
+
           <Button
             title="Mark Today as Holiday"
             onPress={handleMarkHoliday}
@@ -100,31 +114,29 @@ export default function AdminDashboard() {
             style={styles.actionCard}
             onPress={() => router.push('/admin/attendance' as any)}
           >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.primary }]}>
-              <Calendar size={28} color={theme.colors.white} />
-            </View>
+            <Calendar size={28} color={theme.colors.white} />
             <Text style={styles.actionTitle}>Attendance</Text>
-            <Text style={styles.actionDescription}>Manage employee attendance</Text>
+            <Text style={styles.actionDescription}>
+              Manage employee attendance
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionCard}
             onPress={() => router.push('/admin/tasks' as any)}
           >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.accent }]}>
-              <ClipboardList size={28} color={theme.colors.primary} />
-            </View>
+            <ClipboardList size={28} color={theme.colors.primary} />
             <Text style={styles.actionTitle}>Tasks</Text>
-            <Text style={styles.actionDescription}>Create and manage tasks</Text>
+            <Text style={styles.actionDescription}>
+              Create and manage tasks
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionCard}
             onPress={() => router.push('/admin/reports' as any)}
           >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFA500' }]}>
-              <FileText size={28} color={theme.colors.white} />
-            </View>
+            <FileText size={28} color={theme.colors.white} />
             <Text style={styles.actionTitle}>Reports</Text>
             <Text style={styles.actionDescription}>View employee reports</Text>
           </TouchableOpacity>
@@ -133,11 +145,11 @@ export default function AdminDashboard() {
             style={styles.actionCard}
             onPress={() => router.push('/admin/employees' as any)}
           >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.success }]}>
-              <Users size={28} color={theme.colors.white} />
-            </View>
+            <Users size={28} color={theme.colors.white} />
             <Text style={styles.actionTitle}>Employees</Text>
-            <Text style={styles.actionDescription}>Manage employee profiles</Text>
+            <Text style={styles.actionDescription}>
+              Manage employee profiles
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

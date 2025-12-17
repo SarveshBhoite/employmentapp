@@ -13,7 +13,9 @@ export default function EmployeeDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  const { data: todayAttendance, refetch } = trpc.employee.getTodayAttendance.useQuery();
+  const { data: todayAttendance, refetch } =
+    trpc.employee.getTodayAttendance.useQuery();
+
   const punchInMutation = trpc.employee.punchIn.useMutation({
     onSuccess: () => {
       refetch();
@@ -37,16 +39,18 @@ export default function EmployeeDashboard() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      
+
       if (todayAttendance?.punchIn && !todayAttendance?.punchOut) {
         const punchInTime = new Date(todayAttendance.punchIn);
         const now = new Date();
-        const elapsed = Math.floor((now.getTime() - punchInTime.getTime()) / 1000);
+        const elapsed = Math.floor(
+          (now.getTime() - punchInTime.getTime()) / 1000
+        );
         setElapsedTime(elapsed);
 
         const autoPunchOutTime = new Date(punchInTime);
         autoPunchOutTime.setHours(18, 30, 0, 0);
-        
+
         if (now >= autoPunchOutTime) {
           punchOutMutation.mutate();
         }
@@ -56,11 +60,19 @@ export default function EmployeeDashboard() {
     return () => clearInterval(timer);
   }, [todayAttendance, punchOutMutation]);
 
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/employee/login');
+  };
+
   const formatElapsedTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(
+      2,
+      '0'
+    )}:${String(secs).padStart(2, '0')}`;
   };
 
   const getGreeting = () => {
@@ -81,7 +93,10 @@ export default function EmployeeDashboard() {
           <TouchableOpacity style={styles.iconButton}>
             <Bell size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/employee/profile' as any)}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push('/employee/profile' as any)}
+          >
             <User size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
@@ -91,17 +106,27 @@ export default function EmployeeDashboard() {
         <View style={styles.timeCard}>
           <Clock size={32} color={theme.colors.primary} />
           <Text style={styles.currentTime}>
-            {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            {currentTime.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </Text>
           <Text style={styles.currentDate}>
-            {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {currentTime.toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
           </Text>
         </View>
 
         {todayAttendance?.punchIn && !todayAttendance?.punchOut && (
           <View style={styles.timerCard}>
             <Text style={styles.timerLabel}>Time Elapsed</Text>
-            <Text style={styles.timerValue}>{formatElapsedTime(elapsedTime)}</Text>
+            <Text style={styles.timerValue}>
+              {formatElapsedTime(elapsedTime)}
+            </Text>
           </View>
         )}
 
@@ -127,25 +152,39 @@ export default function EmployeeDashboard() {
           ) : (
             <View style={styles.completedCard}>
               <Text style={styles.completedText}>Work day completed!</Text>
-              <Text style={styles.hoursText}>Total Hours: {todayAttendance.totalHours?.toFixed(2) || 0} hrs</Text>
+              <Text style={styles.hoursText}>
+                Total Hours: {todayAttendance.totalHours?.toFixed(2) || 0} hrs
+              </Text>
             </View>
           )}
         </View>
 
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/employee/tasks' as any)}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/employee/tasks' as any)}
+          >
             <Text style={styles.actionTitle}>My Tasks</Text>
             <Text style={styles.actionDescription}>View assigned tasks</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/employee/submit-report' as any)}>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/employee/submit-report' as any)}
+          >
             <Text style={styles.actionTitle}>Submit Report</Text>
             <Text style={styles.actionDescription}>Report your work</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/employee/attendance' as any)}>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/employee/attendance' as any)}
+          >
             <Text style={styles.actionTitle}>Attendance</Text>
             <Text style={styles.actionDescription}>View your attendance</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={logout}>
+
+          <TouchableOpacity style={styles.actionCard} onPress={handleLogout}>
             <Text style={styles.actionTitle}>Logout</Text>
             <Text style={styles.actionDescription}>Sign out</Text>
           </TouchableOpacity>
