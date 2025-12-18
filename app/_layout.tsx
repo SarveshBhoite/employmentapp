@@ -22,7 +22,11 @@ export default function RootLayout() {
   const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
-    SplashScreen.hideAsync();
+    const prepare = async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await SplashScreen.hideAsync();
+    };
+    prepare();
   }, []);
 
   return (

@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
@@ -13,12 +21,22 @@ export default function AdminProfileScreen() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
 
+  /* ================= PROFILE FIELDS ================= */
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [position, setPosition] = useState('');
 
-  // 🔐 Reuse profile API (admin is also a user)
+  /* ================= PASSWORD MODAL ================= */
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const { data: profile } = trpc.employee.getProfile.useQuery();
 
   useEffect(() => {
@@ -30,16 +48,12 @@ export default function AdminProfileScreen() {
     }
   }, [profile]);
 
+  /* ================= UPDATE PROFILE ================= */
+
   const updateProfileMutation = trpc.employee.updateProfile.useMutation({
     onSuccess: () => {
       if (user) {
-        updateUser({
-          ...user,
-          name,
-          phone,
-          address,
-          position,
-        });
+        updateUser({ ...user, name, phone, address, position });
       }
       Alert.alert('Success', 'Profile updated successfully!');
     },
@@ -48,7 +62,7 @@ export default function AdminProfileScreen() {
     },
   });
 
-  const handleUpdate = () => {
+  const handleUpdateProfile = () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Name is required');
       return;
@@ -62,8 +76,46 @@ export default function AdminProfileScreen() {
     });
   };
 
+  /* ================= CHANGE PASSWORD ================= */
+
+  const changePasswordMutation = trpc.auth.changePassword.useMutation({
+    onSuccess: () => {
+      Alert.alert('Success', 'Password changed successfully');
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message);
+    },
+  });
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert('Error', 'All fields are required');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'New passwords do not match');
+      return;
+    }
+
+    changePasswordMutation.mutate({
+      currentPassword,
+      newPassword,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={theme.colors.text} />
@@ -72,14 +124,16 @@ export default function AdminProfileScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
-        {/* Email */}
+      {/* CONTENT */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.infoCard}>
           <Text style={styles.infoLabel}>Email</Text>
           <Text style={styles.infoValue}>{profile?.email}</Text>
         </View>
 
-        {/* Role */}
         <View style={styles.infoCard}>
           <Text style={styles.infoLabel}>Role</Text>
           <Text style={styles.infoValue}>{profile?.role}</Text>
@@ -87,112 +141,161 @@ export default function AdminProfileScreen() {
 
         <View style={styles.divider} />
 
-        <Text style={styles.sectionTitle}>Editable Information</Text>
+        {/* SECTION HEADER */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Editable Information</Text>
+          <TouchableOpacity onPress={() => setShowPasswordModal(true)}>
+            <Text style={styles.changePasswordText}>Change Password</Text>
+          </TouchableOpacity>
+        </View>
 
-        <Input
-          label="Full Name"
-          placeholder="Enter your full name"
-          value={name}
-          onChangeText={setName}
-        />
-
-        <Input
-          label="Phone"
-          placeholder="Enter your phone number"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-
+        <Input label="Full Name" value={name} onChangeText={setName} />
+        <Input label="Phone" value={phone} onChangeText={setPhone} />
         <Input
           label="Address"
-          placeholder="Enter your address"
           value={address}
           onChangeText={setAddress}
           multiline
-          numberOfLines={3}
           style={styles.textArea}
         />
-
-        <Input
-          label="Position"
-          placeholder="Enter your position (e.g. HR Admin, Manager)"
-          value={position}
-          onChangeText={setPosition}
-        />
+        <Input label="Position" value={position} onChangeText={setPosition} />
 
         <Button
           title="Update Profile"
-          onPress={handleUpdate}
+          onPress={handleUpdateProfile}
           loading={updateProfileMutation.isPending}
           style={styles.updateButton}
         />
       </ScrollView>
+
+      {/* CHANGE PASSWORD MODAL */}
+      <Modal visible={showPasswordModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+
+            <Input
+              label="Current Password"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              secureTextEntry={!showCurrent}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowCurrent(!showCurrent)}>
+                  {showCurrent ? <EyeOff size={20} /> : <Eye size={20} />}
+                </TouchableOpacity>
+              }
+            />
+
+            <Input
+              label="New Password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry={!showNew}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowNew(!showNew)}>
+                  {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
+                </TouchableOpacity>
+              }
+            />
+
+            <Input
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirm}
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
+                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                </TouchableOpacity>
+              }
+            />
+
+            <Button
+              title="Update Password"
+              onPress={handleChangePassword}
+              loading={changePasswordMutation.isPending}
+              style={{ marginTop: theme.spacing.md }}
+            />
+
+            <Button
+              title="Cancel"
+              variant="secondary"
+              onPress={() => setShowPasswordModal(false)}
+              style={{ marginTop: theme.spacing.sm }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-  },
+  safeArea: { flex: 1, backgroundColor: theme.colors.surface },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     backgroundColor: theme.colors.white,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  backButton: {
-    padding: theme.spacing.sm,
-  },
-  headerTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  content: {
-    flex: 1,
+  backButton: { padding: theme.spacing.sm },
+  headerTitle: { fontSize: theme.fontSize.lg, fontWeight: '700' },
+
+  scrollContent: {
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl * 2,
   },
+
   infoCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
   },
-  infoLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-  },
-  infoValue: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.text,
-    fontWeight: '500',
-  },
+
+  infoLabel: { fontSize: theme.fontSize.sm, color: theme.colors.textSecondary },
+  infoValue: { fontSize: theme.fontSize.md, fontWeight: '500' },
+
   divider: {
     height: 1,
     backgroundColor: theme.colors.border,
     marginVertical: theme.spacing.lg,
   },
-  sectionTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: '600',
-    color: theme.colors.text,
+
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.md,
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-    paddingTop: 14,
+  sectionTitle: { fontSize: theme.fontSize.lg, fontWeight: '600' },
+  changePasswordText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
-  updateButton: {
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
+
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
+  updateButton: { marginTop: theme.spacing.lg },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: '700',
+    marginBottom: theme.spacing.md,
   },
 });

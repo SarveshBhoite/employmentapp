@@ -1,10 +1,11 @@
 import * as z from 'zod';
 import bcrypt from 'bcryptjs';
 import { TRPCError } from '@trpc/server';
-import { createTRPCRouter, publicProcedure } from '../create-context';
+import { createTRPCRouter, publicProcedure, protectedProcedure  } from '../create-context';
 import { getDb } from '@/backend/db/mongodb';
 import { User } from '@/backend/models/user';
 import { signToken } from '@/backend/utils/jwt';
+import { ObjectId } from 'mongodb';
 
 export const authRouter = createTRPCRouter({
   register: publicProcedure
@@ -106,4 +107,57 @@ export const authRouter = createTRPCRouter({
         },
       };
     }),
+
+   changePassword: protectedProcedure
+  .input(
+    z.object({
+      currentPassword: z.string(),
+      newPassword: z.string().min(6),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    const usersCollection = db.collection<User>('users');
+
+    const userId = ctx.user.userId;
+
+    const user = await usersCollection.findOne({
+      _id: new ObjectId(userId),
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    const isValid = await bcrypt.compare(
+      input.currentPassword,
+      user.password
+    );
+
+    if (!isValid) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Current password is incorrect',
+      });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(input.newPassword, 10);
+
+    await usersCollection.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          password: hashedNewPassword,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    return { success: true };
+  }),
+
+
 });
