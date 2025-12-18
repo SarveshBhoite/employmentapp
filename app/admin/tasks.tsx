@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   picker: {
-    height: 48,
+    height: 60,
   },
   listContent: {
     padding: theme.spacing.lg,

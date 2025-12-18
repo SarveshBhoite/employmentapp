@@ -13,8 +13,14 @@ export default function EmployeesScreen() {
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
   const [newSalary, setNewSalary] = useState('');
+  const [search, setSearch] = useState('');
+
 
   const { data: employees, refetch } = trpc.admin.getAllEmployees.useQuery();
+  const filteredEmployees = (employees || []).filter((emp) =>
+  emp.name.toLowerCase().includes(search.toLowerCase())
+);
+
 
   const updateSalaryMutation = trpc.admin.updateEmployeeSalary.useMutation({
     onSuccess: () => {
@@ -56,8 +62,17 @@ export default function EmployeesScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      <View style={styles.searchContainer}>
+  <Input
+    placeholder="Search employee by name..."
+    value={search}
+    onChangeText={setSearch}
+  />
+</View>
+
+
       <FlatList
-        data={employees || []}
+        data={filteredEmployees}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
@@ -315,4 +330,8 @@ const styles = StyleSheet.create({
   updateButton: {
     marginTop: theme.spacing.md,
   },
+  searchContainer: {
+  paddingHorizontal: theme.spacing.lg,
+  paddingTop: theme.spacing.md,
+},
 });
