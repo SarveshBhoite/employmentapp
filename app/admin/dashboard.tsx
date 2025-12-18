@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -77,11 +78,18 @@ export default function AdminDashboard() {
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.userName}>{user?.name}</Text>
-          <Text style={styles.roleText}>Admin</Text>
-        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+  <Image
+    source={require('@/assets/images/jisnulogo.jpeg')}
+    style={{ width: 38, height: 40, borderRadius: 6 }}
+  />
+  <View>
+    <Text style={styles.greeting}>{getGreeting()}</Text>
+    <Text style={styles.userName}>{user?.name}</Text>
+    <Text style={styles.roleText}>Admin</Text>
+  </View>
+</View>
+
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Bell size={24} color={theme.colors.text} />

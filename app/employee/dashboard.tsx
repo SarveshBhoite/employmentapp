@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Bell, User, Clock, PlayCircle, StopCircle, LogOut } from 'lucide-react-native';
@@ -85,10 +85,17 @@ export default function EmployeeDashboard() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.userName}>{user?.name}</Text>
-        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+  <Image
+    source={require('@/assets/images/jisnulogo.jpeg')}
+    style={{ width: 38, height: 40, borderRadius: 6 }}
+  />
+  <View>
+    <Text style={styles.greeting}>{getGreeting()}</Text>
+    <Text style={styles.userName}>{user?.name}</Text>
+  </View>
+</View>
+
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Bell size={24} color={theme.colors.text} />
