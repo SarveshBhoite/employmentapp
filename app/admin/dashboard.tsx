@@ -1,8 +1,23 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Users, Calendar, ClipboardList, FileText, LogOut } from 'lucide-react-native';
+import {
+  Bell,
+  Users,
+  Calendar,
+  ClipboardList,
+  FileText,
+  LogOut,
+} from 'lucide-react-native';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
@@ -12,9 +27,15 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [currentTime] = useState(new Date());
+  const [showAttendanceList, setShowAttendanceList] = useState(false);
 
   const { data: overview } =
     trpc.admin.getTodayAttendanceOverview.useQuery();
+
+  const { data: attendanceList } =
+    trpc.admin.getTodayAttendanceList.useQuery(undefined, {
+      enabled: showAttendanceList,
+    });
 
   const markHolidayMutation = trpc.admin.markHoliday.useMutation({
     onSuccess: () => {
@@ -53,6 +74,7 @@ export default function AdminDashboard() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>{getGreeting()}</Text>
@@ -69,9 +91,16 @@ export default function AdminDashboard() {
         </View>
       </View>
 
+      {/* CONTENT */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* TODAY ATTENDANCE CARD */}
         <View style={styles.overviewCard}>
-          <Text style={styles.overviewTitle}>Today&apos;s Attendance</Text>
+          <View style={styles.attendanceHeader}>
+            <Text style={styles.overviewTitle}>Today&apos;s Attendance</Text>
+            <TouchableOpacity onPress={() => setShowAttendanceList(true)}>
+              <Text style={styles.seeListText}>See List</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.overviewStats}>
             <View style={styles.statItem}>
@@ -84,7 +113,12 @@ export default function AdminDashboard() {
             <View style={styles.statDivider} />
 
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.colors.success }]}>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: theme.colors.success },
+                ]}
+              >
                 {overview?.presentToday || 0}
               </Text>
               <Text style={styles.statLabel}>Present</Text>
@@ -93,7 +127,12 @@ export default function AdminDashboard() {
             <View style={styles.statDivider} />
 
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: theme.colors.error }]}>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: theme.colors.error },
+                ]}
+              >
                 {overview?.absentToday || 0}
               </Text>
               <Text style={styles.statLabel}>Absent</Text>
@@ -109,6 +148,7 @@ export default function AdminDashboard() {
           />
         </View>
 
+        {/* QUICK ACTIONS */}
         <View style={styles.quickActions}>
           <TouchableOpacity
             style={styles.actionCard}
@@ -153,9 +193,55 @@ export default function AdminDashboard() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* ATTENDANCE LIST MODAL */}
+      <Modal
+        visible={showAttendanceList}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAttendanceList(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Today&apos;s Attendance</Text>
+
+            <Text style={styles.sectionTitle}>Present</Text>
+            {attendanceList?.present.map((p, index) => (
+              <View key={index} style={styles.listRow}>
+                <Text style={styles.nameText}>{p.name}</Text>
+                <Text style={styles.timeText}>
+                  {p.punchIn
+                    ? new Date(p.punchIn).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '--'}
+                </Text>
+              </View>
+            ))}
+
+            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>
+              Absent
+            </Text>
+            {attendanceList?.absent.map((a, index) => (
+              <Text key={index} style={styles.nameText}>
+                {a.name}
+              </Text>
+            ))}
+
+            <Button
+              title="Close"
+              onPress={() => setShowAttendanceList(false)}
+              style={{ marginTop: 20 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -203,21 +289,24 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  },
+  attendanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   overviewTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+  },
+  seeListText: {
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
   overviewStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: theme.spacing.lg,
+    marginVertical: theme.spacing.lg,
   },
   statItem: {
     alignItems: 'center',
@@ -230,7 +319,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
   },
   statDivider: {
     width: 1,
@@ -250,28 +338,48 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     flex: 1,
     minWidth: '45%',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.md,
   },
   actionTitle: {
     fontSize: theme.fontSize.md,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
   },
   actionDescription: {
     fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: '700',
+    marginBottom: theme.spacing.md,
+  },
+  sectionTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: '600',
+    marginBottom: theme.spacing.sm,
+  },
+  listRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  nameText: {
+    fontSize: theme.fontSize.sm,
+  },
+  timeText: {
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
   },
 });

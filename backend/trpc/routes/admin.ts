@@ -302,4 +302,50 @@ export const adminRouter = createTRPCRouter({
 
       return reportsWithDetails;
     }),
+    getTodayAttendanceList: adminProcedure.query(async () => {
+  const db = await getDb();
+  const attendanceCollection = db.collection<Attendance>('attendance');
+  const usersCollection = db.collection<User>('users');
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Fetch all employees
+  const employees = await usersCollection
+    .find({ role: 'employee' })
+    .toArray();
+
+  // Fetch today's attendance
+  const attendanceRecords = await attendanceCollection
+    .find({ date: today })
+    .toArray();
+
+  const attendanceMap = new Map(
+    attendanceRecords.map((a) => [a.userId.toString(), a])
+  );
+
+  const present: { name: string; punchIn?: Date }[] = [];
+  const absent: { name: string }[] = [];
+
+  for (const emp of employees) {
+    const record = attendanceMap.get(emp._id!.toString());
+
+    if (record && record.status === 'present') {
+      present.push({
+        name: emp.name,
+        punchIn: record.punchIn,
+      });
+    } else {
+      absent.push({
+        name: emp.name,
+      });
+    }
+  }
+
+  return {
+    present,
+    absent,
+  };
+}),
+
   })
