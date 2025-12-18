@@ -17,6 +17,7 @@ import {
   ClipboardList,
   FileText,
   LogOut,
+  User,
 } from 'lucide-react-native';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
@@ -84,6 +85,12 @@ export default function AdminDashboard() {
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <Bell size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push('/admin/profile' as any)}
+          >
+            <User size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
             <LogOut size={24} color={theme.colors.text} />

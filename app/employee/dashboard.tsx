@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, User, Clock, PlayCircle, StopCircle } from 'lucide-react-native';
+import { Bell, User, Clock, PlayCircle, StopCircle, LogOut } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/contexts/auth-context';
@@ -99,6 +99,9 @@ export default function EmployeeDashboard() {
           >
             <User size={24} color={theme.colors.text} />
           </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+            <LogOut size={24} color={theme.colors.text} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -184,10 +187,10 @@ export default function EmployeeDashboard() {
             <Text style={styles.actionDescription}>View your attendance</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} onPress={handleLogout}>
+          {/* <TouchableOpacity style={styles.actionCard} onPress={handleLogout}>
             <Text style={styles.actionTitle}>Logout</Text>
             <Text style={styles.actionDescription}>Sign out</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </SafeAreaView>
