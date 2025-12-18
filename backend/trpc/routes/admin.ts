@@ -241,12 +241,13 @@ export const adminRouter = createTRPCRouter({
       return tasksWithDetails;
     }),
 
-  getAllReports: adminProcedure
+    getAllReports: adminProcedure
     .input(
       z.object({
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         searchName: z.string().optional(),
+        status: z.enum(['ongoing', 'in_progress', 'completed']).optional(), // ✅ ADDED
       })
     )
     .query(async ({ input }) => {
@@ -254,7 +255,8 @@ export const adminRouter = createTRPCRouter({
       const reportsCollection = db.collection<Report>('reports');
       const usersCollection = db.collection<User>('users');
 
-      let userFilter: any = {};
+      // --- USER FILTER (for name search) ---
+      const userFilter: any = {};
       if (input.searchName) {
         userFilter.name = { $regex: input.searchName, $options: 'i' };
       }
@@ -262,12 +264,26 @@ export const adminRouter = createTRPCRouter({
       const users = await usersCollection.find(userFilter).toArray();
       const userIds = users.map((u) => u._id);
 
-      const filter: any = { userId: { $in: userIds } };
-      if (input.startDate && input.endDate) {
-        filter.createdAt = { $gte: input.startDate, $lte: input.endDate };
+      // --- REPORT FILTER ---
+      const reportFilter: any = {
+        userId: { $in: userIds },
+      };
+
+      if (input.status) {
+        reportFilter.status = input.status; // ✅ STATUS FILTER
       }
 
-      const reports = await reportsCollection.find(filter).sort({ createdAt: -1 }).toArray();
+      if (input.startDate && input.endDate) {
+        reportFilter.createdAt = {
+          $gte: input.startDate,
+          $lte: input.endDate,
+        };
+      }
+
+      const reports = await reportsCollection
+        .find(reportFilter)
+        .sort({ createdAt: -1 })
+        .toArray();
 
       const reportsWithDetails = await Promise.all(
         reports.map(async (report) => {
@@ -285,4 +301,4 @@ export const adminRouter = createTRPCRouter({
 
       return reportsWithDetails;
     }),
-});
+  })

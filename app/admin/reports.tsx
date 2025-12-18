@@ -7,11 +7,24 @@ import { Input } from '@/components/Input';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
 
+const STATUS_FILTERS = [
+  { label: 'All', value: undefined },
+  { label: 'Completed', value: 'completed' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Ongoing', value: 'ongoing' },
+] as const;
+
 export default function ReportsScreen() {
   const router = useRouter();
   const [searchName, setSearchName] = useState('');
+  const [status, setStatus] = useState<
+    'completed' | 'in_progress' | 'ongoing' | undefined
+  >(undefined);
 
-  const { data: reports } = trpc.admin.getAllReports.useQuery({ searchName });
+  const { data: reports } = trpc.admin.getAllReports.useQuery({
+    searchName,
+    status,
+  });
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -23,6 +36,7 @@ export default function ReportsScreen() {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* SEARCH */}
       <View style={styles.searchContainer}>
         <Search size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <Input
@@ -33,6 +47,30 @@ export default function ReportsScreen() {
         />
       </View>
 
+      {/* STATUS FILTER */}
+      <View style={styles.filterRow}>
+        {STATUS_FILTERS.map((item) => (
+          <TouchableOpacity
+            key={item.label}
+            style={[
+              styles.filterChip,
+              status === item.value && styles.filterChipActive,
+            ]}
+            onPress={() => setStatus(item.value)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                status === item.value && styles.filterTextActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* REPORT LIST */}
       <FlatList
         data={reports || []}
         keyExtractor={(item) => item._id}
@@ -45,14 +83,13 @@ export default function ReportsScreen() {
                 {new Date(item.createdAt).toLocaleDateString()}
               </Text>
             </View>
+
             <Text style={styles.taskTitle}>{item.taskTitle}</Text>
             <Text style={styles.summary}>{item.summary}</Text>
-            <View style={styles.statusContainer}>
-              <Text style={styles.statusLabel}>Status:</Text>
-              <Text style={[styles.statusValue, { color: theme.colors.primary }]}>
-                {item.status}
-              </Text>
-            </View>
+
+            <Text style={styles.status}>
+              Status: <Text style={styles.statusValue}>{item.status}</Text>
+            </Text>
           </View>
         )}
         ListEmptyComponent={
@@ -66,10 +103,7 @@ export default function ReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.surface,
-  },
+  safeArea: { flex: 1, backgroundColor: theme.colors.surface },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -80,93 +114,68 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  backButton: {
-    padding: theme.spacing.sm,
-  },
+  backButton: { padding: theme.spacing.sm },
   headerTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: '700',
     color: theme.colors.text,
   },
+
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
-    position: 'relative',
   },
-  searchIcon: {
-    position: 'absolute',
-    left: theme.spacing.lg + theme.spacing.md,
-    top: theme.spacing.md + 28,
-    zIndex: 1,
+  searchIcon: { position: 'absolute', left: 32, top: 38 },
+  searchInput: { paddingLeft: 36 },
+
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
   },
-  searchInput: {
-    flex: 1,
-    paddingLeft: 36,
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: theme.colors.border,
   },
-  listContent: {
-    padding: theme.spacing.lg,
+  filterChipActive: {
+    backgroundColor: theme.colors.primary,
   },
+  filterText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
+  },
+  filterTextActive: {
+    color: theme.colors.white,
+    fontWeight: '600',
+  },
+
+  listContent: { padding: theme.spacing.lg },
   reportCard: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   reportHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  employeeName: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  reportDate: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textSecondary,
-  },
+  employeeName: { fontWeight: '600', fontSize: theme.fontSize.md },
+  reportDate: { fontSize: theme.fontSize.xs, color: theme.colors.textSecondary },
   taskTitle: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '500',
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  summary: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.md,
-    lineHeight: 20,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-  },
-  statusLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-  },
-  statusValue: {
-    fontSize: theme.fontSize.sm,
     fontWeight: '600',
+    color: theme.colors.primary,
+    marginBottom: 4,
   },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: theme.spacing.xl * 2,
-  },
-  emptyText: {
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textSecondary,
-  },
+  summary: { color: theme.colors.textSecondary, marginBottom: 6 },
+  status: { fontSize: theme.fontSize.sm },
+  statusValue: { fontWeight: '600' },
+
+  emptyContainer: { alignItems: 'center', paddingTop: 60 },
+  emptyText: { color: theme.colors.textSecondary },
 });
