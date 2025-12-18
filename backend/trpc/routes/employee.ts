@@ -233,6 +233,7 @@ export const employeeRouter = createTRPCRouter({
           userId: new ObjectId(ctx.user.userId),
           date: { $gte: startDate, $lte: endDate },
         })
+        .sort({ date: -1 })
         .toArray();
 
       const holidays = await holidaysCollection

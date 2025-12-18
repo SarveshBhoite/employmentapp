@@ -114,7 +114,7 @@ export default function AdminDashboard() {
             style={styles.actionCard}
             onPress={() => router.push('/admin/attendance' as any)}
           >
-            <Calendar size={28} color={theme.colors.white} />
+            <Calendar size={28} color={theme.colors.primary} />
             <Text style={styles.actionTitle}>Attendance</Text>
             <Text style={styles.actionDescription}>
               Manage employee attendance
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
             style={styles.actionCard}
             onPress={() => router.push('/admin/reports' as any)}
           >
-            <FileText size={28} color={theme.colors.white} />
+            <FileText size={28} color={theme.colors.primary} />
             <Text style={styles.actionTitle}>Reports</Text>
             <Text style={styles.actionDescription}>View employee reports</Text>
           </TouchableOpacity>
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
             style={styles.actionCard}
             onPress={() => router.push('/admin/employees' as any)}
           >
-            <Users size={28} color={theme.colors.white} />
+            <Users size={28} color={theme.colors.primary} />
             <Text style={styles.actionTitle}>Employees</Text>
             <Text style={styles.actionDescription}>
               Manage employee profiles
