@@ -9,6 +9,12 @@ export default function TasksScreen() {
   const router = useRouter();
   const { data: tasks, isLoading } = trpc.employee.getMyTasks.useQuery();
 
+  // ✅ SHOW ONLY ACTIVE TASKS
+  const activeTasks =
+    tasks?.filter(
+      (task) => task.status === 'ongoing' || task.status === 'in_progress'
+    ) || [];
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -46,7 +52,7 @@ export default function TasksScreen() {
       </View>
 
       <FlatList
-        data={tasks || []}
+        data={activeTasks}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
@@ -57,7 +63,9 @@ export default function TasksScreen() {
                 <Text style={styles.statusText}>{getStatusLabel(item.status)}</Text>
               </View>
             </View>
+
             <Text style={styles.taskDescription}>{item.description}</Text>
+
             <View style={styles.taskFooter}>
               <Text style={styles.createdBy}>Assigned by: {item.createdBy}</Text>
               <Text style={styles.taskDate}>
@@ -69,7 +77,7 @@ export default function TasksScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {isLoading ? 'Loading tasks...' : 'No tasks assigned yet'}
+              {isLoading ? 'Loading tasks...' : 'No active tasks 🎉'}
             </Text>
           </View>
         }

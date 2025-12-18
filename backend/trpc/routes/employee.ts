@@ -143,32 +143,75 @@ export const employeeRouter = createTRPCRouter({
   }),
 
   submitReport: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.string(),
-        taskTitle: z.string(),
-        summary: z.string(),
-        status: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      const reportsCollection = db.collection<Report>('reports');
+  .input(
+    z.object({
+      taskId: z
+        .string()
+        .optional()
+        .transform((v) => (v && v.length > 0 ? v : undefined)),
 
-      const newReport: Report = {
-        userId: new ObjectId(ctx.user.userId),
-        taskId: new ObjectId(input.taskId),
-        taskTitle: input.taskTitle,
-        summary: input.summary,
-        status: input.status,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      taskTitle: z
+        .string()
+        .optional()
+        .transform((v) => (v && v.length > 0 ? v : undefined)),
 
-      await reportsCollection.insertOne(newReport);
+      summary: z.string().min(1),
+      status: z.enum(['ongoing', 'in_progress', 'completed']),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    const reportsCollection = db.collection<Report>('reports');
+    const tasksCollection = db.collection<Task>('tasks');
 
-      return { success: true };
-    }),
+    const now = new Date();
+
+    const newReport: Report = {
+      userId: new ObjectId(ctx.user.userId),
+      summary: input.summary,
+      status: input.status,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (input.taskId) {
+      const taskObjectId = new ObjectId(input.taskId);
+
+      const task = await tasksCollection.findOne({
+        _id: taskObjectId,
+        assignedTo: new ObjectId(ctx.user.userId),
+      });
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found or not assigned to you',
+        });
+      }
+
+      newReport.taskId = taskObjectId;
+      newReport.taskTitle = task.title;
+
+      await tasksCollection.updateOne(
+        { _id: taskObjectId },
+        {
+          $set: {
+            status: input.status,
+            updatedAt: now,
+          },
+        }
+      );
+    }
+
+    if (!input.taskId && input.taskTitle) {
+      newReport.taskTitle = input.taskTitle;
+    }
+
+    await reportsCollection.insertOne(newReport);
+    return { success: true };
+  }),
+
+
 
   getMyAttendance: protectedProcedure
     .input(

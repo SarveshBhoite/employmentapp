@@ -11,17 +11,21 @@ import { trpc } from '@/lib/trpc';
 
 export default function SubmitReportScreen() {
   const router = useRouter();
-  const [taskId, setTaskId] = useState('');
+
+  // empty = nothing selected
+  // "other" = custom report
+  // any other = taskId
+  const [taskId, setTaskId] = useState<string>('');
   const [taskTitle, setTaskTitle] = useState('');
   const [summary, setSummary] = useState('');
-  const [status, setStatus] = useState('completed');
+  const [status, setStatus] = useState<'ongoing' | 'in_progress' | 'completed'>('completed');
 
   const { data: tasks } = trpc.employee.getMyTasks.useQuery();
 
   const submitReportMutation = trpc.employee.submitReport.useMutation({
     onSuccess: () => {
       Alert.alert('Success', 'Report submitted successfully!', [
-        { text: 'OK', onPress: () => router.back() }
+        { text: 'OK', onPress: () => router.back() },
       ]);
     },
     onError: (error) => {
@@ -30,12 +34,36 @@ export default function SubmitReportScreen() {
   });
 
   const handleSubmit = () => {
-    if (!taskId || !taskTitle || !summary) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    submitReportMutation.mutate({ taskId, taskTitle, summary, status });
+  if (!taskId) {
+    Alert.alert('Error', 'Please select a task or choose Other');
+    return;
+  }
+
+  if (!summary.trim()) {
+    Alert.alert('Error', 'Please enter report summary');
+    return;
+  }
+
+  if (taskId === 'other' && !taskTitle.trim()) {
+    Alert.alert('Error', 'Please enter report title');
+    return;
+  }
+
+  // ✅ build payload safely
+  const payload: any = {
+    summary,
+    status,
   };
+
+  if (taskId === 'other') {
+    payload.taskTitle = taskTitle;
+  } else {
+    payload.taskId = taskId;
+  }
+
+  submitReportMutation.mutate(payload);
+};
+
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -48,13 +76,7 @@ export default function SubmitReportScreen() {
       </View>
 
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
-        <Input
-          label="Task Title"
-          placeholder="Enter task title"
-          value={taskTitle}
-          onChangeText={setTaskTitle}
-        />
-
+        {/* TASK SELECTOR */}
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Select Task</Text>
           <View style={styles.pickerWrapper}>
@@ -62,29 +84,54 @@ export default function SubmitReportScreen() {
               selectedValue={taskId}
               onValueChange={(value) => {
                 setTaskId(value);
-                const selectedTask = tasks?.find(t => t._id === value);
+
+                if (!value || value === 'other') {
+                  setTaskTitle('');
+                  return;
+                }
+
+                const selectedTask = tasks?.find((t) => t._id === value);
                 if (selectedTask) {
                   setTaskTitle(selectedTask.title);
                 }
               }}
               style={styles.picker}
             >
-              <Picker.Item label="Select a task..." value="" />
+              <Picker.Item label="Select task..." value="" />
+
               {tasks?.map((task) => (
                 <Picker.Item key={task._id} label={task.title} value={task._id} />
               ))}
+
+              <Picker.Item label="Other (General Report)" value="other" />
             </Picker>
           </View>
         </View>
 
+        {/* READ-ONLY TITLE FOR ASSIGNED TASK */}
+        {taskId && taskId !== 'other' && (
+          <Input
+            label="Task Title"
+            value={taskTitle}
+            editable={false}
+          />
+        )}
+
+        {/* EDITABLE TITLE FOR OTHER */}
+        {taskId === 'other' && (
+          <Input
+            label="Report Title"
+            placeholder="Enter report title"
+            value={taskTitle}
+            onChangeText={setTaskTitle}
+          />
+        )}
+
+        {/* STATUS */}
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Status</Text>
           <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={status}
-              onValueChange={setStatus}
-              style={styles.picker}
-            >
+            <Picker selectedValue={status} onValueChange={setStatus} style={styles.picker}>
               <Picker.Item label="Completed" value="completed" />
               <Picker.Item label="In Progress" value="in_progress" />
               <Picker.Item label="Ongoing" value="ongoing" />
@@ -92,8 +139,9 @@ export default function SubmitReportScreen() {
           </View>
         </View>
 
+        {/* SUMMARY */}
         <Input
-          label="Task Summary"
+          label="Report Summary"
           placeholder="Describe what you've done..."
           value={summary}
           onChangeText={setSummary}
