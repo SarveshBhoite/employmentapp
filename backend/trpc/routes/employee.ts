@@ -8,6 +8,7 @@ import { Task } from '@/backend/models/task';
 import { Report } from '@/backend/models/report';
 import { Holiday } from '@/backend/models/holiday';
 import { User } from '@/backend/models/user';
+import { Request } from '@/backend/models/request';
 
 export const employeeRouter = createTRPCRouter({
   punchIn: protectedProcedure.mutation(async ({ ctx }) => {
@@ -320,4 +321,66 @@ export const employeeRouter = createTRPCRouter({
       salary: user.salary,
     };
   }),
+  /* ================= EMPLOYEE REQUESTS ================= */
+
+createRequest: protectedProcedure
+  .input(
+    z.object({
+      category: z.enum(['leave', 'wfh', 'query', 'complaint']),
+      message: z.string().min(1),
+      fromDate: z.date().optional(),
+      toDate: z.date().optional(),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    const requestCollection = db.collection<Request>('requests');
+
+    // Validation for leave / wfh
+    if (
+      (input.category === 'leave' || input.category === 'wfh') &&
+      (!input.fromDate || !input.toDate)
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Date range is required',
+      });
+    }
+
+    await requestCollection.insertOne({
+      userId: new ObjectId(ctx.user.userId),
+      category: input.category,
+      message: input.message,
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return { success: true };
+  }),
+
+getMyRequests: protectedProcedure.query(async ({ ctx }) => {
+  const db = await getDb();
+  const requestCollection = db.collection<Request>('requests');
+
+  const requests = await requestCollection
+    .find({ userId: new ObjectId(ctx.user.userId) })
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  return requests.map((r) => ({
+    _id: r._id!.toString(),
+    category: r.category,
+    message: r.message,
+    fromDate: r.fromDate,
+    toDate: r.toDate,
+    status: r.status,
+    adminReply: r.adminReply,
+    createdAt: r.createdAt,
+  }));
+}),
+
+
 });

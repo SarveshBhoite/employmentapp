@@ -194,6 +194,17 @@ export default function EmployeeDashboard() {
             <Text style={styles.actionDescription}>View your attendance</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+  style={styles.actionCard}
+  onPress={() => router.push('/employee/requests' as any)}
+>
+  <Text style={styles.actionTitle}>Requests</Text>
+  <Text style={styles.actionDescription}>
+    Leave, WFH, Queries & Complaints
+  </Text>
+</TouchableOpacity>
+
+
           {/* <TouchableOpacity style={styles.actionCard} onPress={handleLogout}>
             <Text style={styles.actionTitle}>Logout</Text>
             <Text style={styles.actionDescription}>Sign out</Text>

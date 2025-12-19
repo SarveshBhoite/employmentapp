@@ -8,6 +8,7 @@ import { Task } from '@/backend/models/task';
 import { Report } from '@/backend/models/report';
 import { Holiday } from '@/backend/models/holiday';
 import { User } from '@/backend/models/user';
+import { Request } from '@/backend/models/request';
 
 export const adminRouter = createTRPCRouter({
   getTodayAttendanceOverview: adminProcedure.query(async () => {
@@ -347,5 +348,79 @@ export const adminRouter = createTRPCRouter({
     absent,
   };
 }),
+/* ================= ADMIN REQUEST MANAGEMENT ================= */
+
+getAllRequests: adminProcedure
+  .input(
+    z.object({
+      searchName: z.string().optional(),
+    })
+  )
+  .query(async ({ input }) => {
+    const db = await getDb();
+    const requestsCollection = db.collection<Request>('requests');
+    const usersCollection = db.collection<User>('users');
+
+    let userFilter: any = {};
+    if (input.searchName) {
+      userFilter.name = { $regex: input.searchName, $options: 'i' };
+    }
+
+    const users = await usersCollection.find(userFilter).toArray();
+    const userMap = new Map(users.map((u) => [u._id!.toString(), u.name]));
+
+    const requests = await requestsCollection
+      .find({
+        userId: { $in: users.map((u) => u._id!) },
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return requests.map((r) => ({
+      _id: r._id!.toString(),
+      employeeName: userMap.get(r.userId.toString()) || 'Unknown',
+      category: r.category,
+      message: r.message,
+      fromDate: r.fromDate,
+      toDate: r.toDate,
+      status: r.status,
+      adminReply: r.adminReply,
+      createdAt: r.createdAt,
+    }));
+  }),
+
+updateRequestStatus: adminProcedure
+  .input(
+    z.object({
+      requestId: z.string(),
+      status: z.enum(['approved', 'rejected', 'replied']),
+      adminReply: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input }) => {
+    const db = await getDb();
+    const requestsCollection = db.collection<Request>('requests');
+
+    const request = await requestsCollection.findOne({
+      _id: new ObjectId(input.requestId),
+    });
+
+    if (!request) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Request not found' });
+    }
+
+    await requestsCollection.updateOne(
+      { _id: request._id },
+      {
+        $set: {
+          status: input.status,
+          adminReply: input.adminReply,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    return { success: true };
+  }),
 
   })
