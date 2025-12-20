@@ -81,6 +81,7 @@ export default function SubmitReportScreen() {
           <Text style={styles.label}>Select Task</Text>
           <View style={styles.pickerWrapper}>
             <Picker
+            mode='dropdown'
               selectedValue={taskId}
               onValueChange={(value) => {
                 setTaskId(value);
@@ -96,6 +97,7 @@ export default function SubmitReportScreen() {
                 }
               }}
               style={styles.picker}
+              dropdownIconColor={theme.colors.text}
             >
               <Picker.Item label="Select task..." value="" />
 
@@ -131,7 +133,13 @@ export default function SubmitReportScreen() {
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Status</Text>
           <View style={styles.pickerWrapper}>
-            <Picker selectedValue={status} onValueChange={setStatus} style={styles.picker}>
+<Picker
+  mode="dropdown"
+  selectedValue={status}
+  onValueChange={setStatus}
+  style={styles.picker}
+  dropdownIconColor={theme.colors.text}
+>
               <Picker.Item label="Completed" value="completed" />
               <Picker.Item label="In Progress" value="in_progress" />
               <Picker.Item label="Ongoing" value="ongoing" />
@@ -206,6 +214,8 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 52,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.white
   },
   textArea: {
     minHeight: 120,

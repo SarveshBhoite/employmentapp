@@ -90,6 +90,7 @@ export default function TasksManagementScreen() {
         <Filter size={20} color={theme.colors.primary} />
         <View style={styles.filterPicker}>
           <Picker
+          mode='dropdown'
   selectedValue={selectedStatus}
   onValueChange={(value) => setSelectedStatus(value as any)}
   style={styles.picker}
@@ -236,6 +237,7 @@ const styles = StyleSheet.create({
   picker: {
     height: 60,
     color: theme.colors.text,
+    backgroundColor:theme.colors.white
   },
   listContent: {
     padding: theme.spacing.lg,

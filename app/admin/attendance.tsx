@@ -56,11 +56,13 @@ export default function AdminAttendanceScreen() {
           <Text style={styles.label}>Select Employee</Text>
           <View style={styles.pickerWrapper}>
             <Picker
+  mode="dropdown"
   selectedValue={selectedUserId}
   onValueChange={setSelectedUserId}
   style={styles.picker}
-  dropdownIconColor={theme.colors.text} // ✅ Android arrow
+  dropdownIconColor={theme.colors.text}
 >
+
   <Picker.Item
     label="Select an employee..."
     value=""
@@ -217,6 +219,7 @@ const styles = StyleSheet.create({
   picker: {
     height: 52,
     color: theme.colors.text,
+    backgroundColor: theme.colors.white,
   },
   monthSelector: {
     flexDirection: 'row',
