@@ -19,6 +19,7 @@ import {
   FileText,
   LogOut,
   User,
+  TicketCheck,
 } from 'lucide-react-native';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
@@ -204,6 +205,16 @@ export default function AdminDashboard() {
             <Text style={styles.actionTitle}>Employees</Text>
             <Text style={styles.actionDescription}>
               Manage employee profiles
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/admin/requests' as any)}
+          >
+            <TicketCheck size={28} color={theme.colors.primary} />
+            <Text style={styles.actionTitle}>Requests</Text>
+            <Text style={styles.actionDescription}>
+              Manage employee requests and queries
             </Text>
           </TouchableOpacity>
         </View>

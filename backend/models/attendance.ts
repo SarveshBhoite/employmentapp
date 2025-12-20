@@ -8,6 +8,7 @@ export interface Attendance {
   punchOut?: Date;
   totalHours?: number;
   status: 'present' | 'absent';
+  workType?: 'office' | 'wfh' | 'leave';
   createdAt: Date;
   updatedAt: Date;
 }

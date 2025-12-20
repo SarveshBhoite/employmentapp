@@ -18,6 +18,25 @@ export const employeeRouter = createTRPCRouter({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const requestsCollection = db.collection<Request>('requests');
+
+const todayRequest = await requestsCollection.findOne({
+  userId: new ObjectId(ctx.user.userId),
+  status: 'approved',
+  fromDate: { $lte: today },
+  toDate: { $gte: today },
+  category: { $in: ['leave', 'wfh'] },
+});
+
+if (todayRequest?.category === 'leave') {
+  throw new TRPCError({
+    code: 'BAD_REQUEST',
+    message: 'You are on approved leave today',
+  });
+}
+
+
+
     const existingAttendance = await attendanceCollection.findOne({
       userId: new ObjectId(ctx.user.userId),
       date: today,
@@ -252,8 +271,17 @@ export const employeeRouter = createTRPCRouter({
         }
       }
 
-      const presentDays = attendances.filter((a) => a.status === 'present').length;
-      const absentDays = Math.max(0, daysInMonth - presentDays - sundays - holidays.length);
+const presentDays = attendances.filter(
+  (a) => a.status === 'present'
+).length;
+
+const leaveDays = attendances.filter(
+  (a) => a.workType === 'leave'
+).length;
+const absentDays = Math.max(
+  0,
+  daysInMonth - presentDays - leaveDays - sundays - holidays.length
+);
 
       return {
         presentDays,

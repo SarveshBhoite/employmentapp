@@ -400,6 +400,7 @@ updateRequestStatus: adminProcedure
   .mutation(async ({ input }) => {
     const db = await getDb();
     const requestsCollection = db.collection<Request>('requests');
+    const attendanceCollection = db.collection<Attendance>('attendance');
 
     const request = await requestsCollection.findOne({
       _id: new ObjectId(input.requestId),
@@ -409,6 +410,7 @@ updateRequestStatus: adminProcedure
       throw new TRPCError({ code: 'NOT_FOUND', message: 'Request not found' });
     }
 
+    // Update request itself
     await requestsCollection.updateOne(
       { _id: request._id },
       {
@@ -420,7 +422,51 @@ updateRequestStatus: adminProcedure
       }
     );
 
+    // ✅ Only process attendance for approved leave / wfh
+    if (
+      input.status === 'approved' &&
+      (request.category === 'leave' || request.category === 'wfh') &&
+      request.fromDate &&
+      request.toDate
+    ) {
+      const start = new Date(request.fromDate);
+      const end = new Date(request.toDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      for (
+        let d = new Date(start);
+        d <= end;
+        d.setDate(d.getDate() + 1)
+      ) {
+        const date = new Date(d);
+
+        await attendanceCollection.updateOne(
+          {
+            userId: request.userId,
+            date,
+          },
+          {
+            $set: {
+              userId: request.userId,
+              date,
+              status: request.category === 'wfh' ? 'present' : 'absent',
+workType: request.category === 'wfh' ? 'wfh' : 'leave',
+
+              updatedAt: new Date(),
+            },
+            $setOnInsert: {
+              createdAt: new Date(),
+            },
+          },
+          { upsert: true }
+        );
+      }
+    }
+
     return { success: true };
   }),
+
 
   })
