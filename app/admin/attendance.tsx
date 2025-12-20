@@ -56,15 +56,26 @@ export default function AdminAttendanceScreen() {
           <Text style={styles.label}>Select Employee</Text>
           <View style={styles.pickerWrapper}>
             <Picker
-              selectedValue={selectedUserId}
-              onValueChange={setSelectedUserId}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select an employee..." value="" />
-              {employees?.map((emp) => (
-                <Picker.Item key={emp._id} label={emp.name} value={emp._id} />
-              ))}
-            </Picker>
+  selectedValue={selectedUserId}
+  onValueChange={setSelectedUserId}
+  style={styles.picker}
+  dropdownIconColor={theme.colors.text} // ✅ Android arrow
+>
+  <Picker.Item
+    label="Select an employee..."
+    value=""
+    color={theme.colors.textSecondary}   // ✅ placeholder visible
+  />
+  {employees?.map((emp) => (
+    <Picker.Item
+      key={emp._id}
+      label={emp.name}
+      value={emp._id}
+      color={theme.colors.text}          // ✅ visible in APK
+    />
+  ))}
+</Picker>
+
           </View>
         </View>
 
@@ -205,6 +216,7 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 52,
+    color: theme.colors.text,
   },
   monthSelector: {
     flexDirection: 'row',

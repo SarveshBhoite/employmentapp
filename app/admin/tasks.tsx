@@ -90,15 +90,17 @@ export default function TasksManagementScreen() {
         <Filter size={20} color={theme.colors.primary} />
         <View style={styles.filterPicker}>
           <Picker
-            selectedValue={selectedStatus}
-            onValueChange={(value) => setSelectedStatus(value as any)}
-            style={styles.picker}
-          >
-            <Picker.Item label="All Tasks" value="all" />
-            <Picker.Item label="Ongoing" value="ongoing" />
-            <Picker.Item label="In Progress" value="in_progress" />
-            <Picker.Item label="Completed" value="completed" />
-          </Picker>
+  selectedValue={selectedStatus}
+  onValueChange={(value) => setSelectedStatus(value as any)}
+  style={styles.picker}
+  dropdownIconColor={theme.colors.text}
+>
+  <Picker.Item label="All Tasks" value="all" color={theme.colors.text} />
+  <Picker.Item label="Ongoing" value="ongoing" color={theme.colors.text} />
+  <Picker.Item label="In Progress" value="in_progress" color={theme.colors.text} />
+  <Picker.Item label="Completed" value="completed" color={theme.colors.text} />
+</Picker>
+
         </View>
       </View>
 
@@ -233,6 +235,7 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 60,
+    color: theme.colors.text,
   },
   listContent: {
     padding: theme.spacing.lg,

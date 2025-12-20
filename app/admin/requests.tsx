@@ -112,11 +112,16 @@ export default function AdminRequestsScreen() {
       {/* SEARCH */}
       <View style={styles.searchContainer}>
         <TextInput
-          placeholder="Search employee by name..."
-          value={searchName}
-          onChangeText={setSearchName}
-          style={styles.searchInput}
-        />
+  placeholder="Search employee by name..."
+  value={searchName}
+  onChangeText={setSearchName}
+  placeholderTextColor={theme.colors.textSecondary} // 🔥 REQUIRED
+  style={[
+    styles.searchInput,
+    { color: theme.colors.text },                   // 🔥 REQUIRED
+  ]}
+/>
+
       </View>
 
       {/* LIST */}
