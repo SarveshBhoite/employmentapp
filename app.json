@@ -4,35 +4,35 @@
     "slug": "employee-management",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/splash.jpeg",
-    "scheme": "employeemanagement",
+    "icon": "./assets/images/icon.jpeg",
+    "scheme": "jisnuportal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/images/splash.jpeg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
+      "package": "com.jisnu.employeeportal",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splash.jpeg",
+        "foregroundImage": "./assets/images/icon.jpeg",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "INTERNET"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -47,9 +47,15 @@
       "expo-font",
       "expo-web-browser"
     ],
-
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "32168197-07f4-4696-a5a8-f06d6f52f360"
+      }
+    },
+    "owner": "sarveshb28"
   }
 }
