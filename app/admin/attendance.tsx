@@ -55,30 +55,30 @@ export default function AdminAttendanceScreen() {
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Select Employee</Text>
           <View style={styles.pickerWrapper}>
-            <Picker
-  mode="dropdown"
-  selectedValue={selectedUserId}
-  onValueChange={setSelectedUserId}
-  style={styles.picker}
-  dropdownIconColor={theme.colors.text}
->
-
-  <Picker.Item
-    label="Select an employee..."
-    value=""
-    color={theme.colors.textSecondary}   // ✅ placeholder visible
-  />
-  {employees?.map((emp) => (
+  <Picker
+    mode="dropdown"
+    selectedValue={selectedUserId}
+    onValueChange={setSelectedUserId}
+    style={styles.picker}
+    dropdownIconColor={theme.colors.text}
+    itemStyle={styles.pickerItem} // ✅ IMPORTANT (Android)
+  >
     <Picker.Item
-      key={emp._id}
-      label={emp.name}
-      value={emp._id}
-      color={theme.colors.text}          // ✅ visible in APK
+      label="Select an employee..."
+      value=""
+      color={theme.colors.textSecondary}
     />
-  ))}
-</Picker>
+    {employees?.map((emp) => (
+      <Picker.Item
+        key={emp._id}
+        label={emp.name}
+        value={emp._id}
+        color={theme.colors.text}
+      />
+    ))}
+  </Picker>
+</View>
 
-          </View>
         </View>
 
         {selectedUserId && (
@@ -210,17 +210,24 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   pickerWrapper: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.white,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 52,
-    color: theme.colors.text,
-    backgroundColor: theme.colors.white,
-  },
+  borderWidth: 1,
+  borderColor: theme.colors.border,
+  borderRadius: theme.borderRadius.md,
+  backgroundColor: theme.colors.white, // ✅ locks background
+  paddingHorizontal: 4,
+},
+
+picker: {
+  height: 52,
+  color: theme.colors.text,            // ✅ locks text color
+  backgroundColor: theme.colors.white, // ✅ prevents dark mode override
+},
+
+pickerItem: {
+  color: theme.colors.text,             
+  fontSize: theme.fontSize.md,
+},
+
   monthSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',

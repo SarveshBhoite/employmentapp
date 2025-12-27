@@ -252,29 +252,63 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getTasks: adminProcedure
-    .input(
-      z.object({
-        status: z.enum(['all', 'ongoing', 'in_progress', 'completed']).optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      const db = await getDb();
-      const tasks = await db.collection<Task>('tasks').find(
-        input.status && input.status !== 'all'
-          ? { status: input.status }
-          : {}
-      ).toArray();
+  .input(
+    z.object({
+      status: z.enum(['all', 'ongoing', 'in_progress', 'completed']).optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+    })
+  )
+  .query(async ({ input }) => {
+    const db = await getDb();
+    const tasksCollection = db.collection<Task>('tasks');
+    const usersCollection = db.collection<User>('users');
 
-      return tasks.map(t => ({
-        _id: t._id!.toString(),
-        title: t.title,
-        description: t.description,
-        status: t.status,
-        createdAt: t.createdAt,
-      }));
-    }),
+    const filter: any = {};
+
+    if (input.status && input.status !== 'all') {
+      filter.status = input.status;
+    }
+
+    if (input.startDate && input.endDate) {
+      filter.createdAt = {
+        $gte: input.startDate,
+        $lte: input.endDate,
+      };
+    }
+
+    const tasks = await tasksCollection
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const tasksWithAssignedUsers = await Promise.all(
+      tasks.map(async (task) => {
+        const assignedUsers =
+          task.assignedTo && task.assignedTo.length > 0
+            ? await usersCollection
+                .find({ _id: { $in: task.assignedTo } })
+                .project({ name: 1 })
+                .toArray()
+            : [];
+
+        return {
+          _id: task._id!.toString(),
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          createdAt: task.createdAt,
+          assignedTo: assignedUsers.map((u) => ({
+            _id: u._id!.toString(),
+            name: u.name,
+          })),
+        };
+      })
+    );
+
+    return tasksWithAssignedUsers;
+  }),
+
 
   /* ================= REPORTS ================= */
 

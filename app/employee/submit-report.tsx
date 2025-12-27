@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
@@ -12,15 +19,14 @@ import { trpc } from '@/lib/trpc';
 export default function SubmitReportScreen() {
   const router = useRouter();
 
-  // empty = nothing selected
-  // "other" = custom report
-  // any other = taskId
   const [taskId, setTaskId] = useState<string>('');
   const [taskTitle, setTaskTitle] = useState('');
   const [summary, setSummary] = useState('');
-  const [status, setStatus] = useState<'ongoing' | 'in_progress' | 'completed'>('completed');
+  const [status, setStatus] = useState<
+    'ongoing' | 'in_progress' | 'completed'
+  >('completed');
 
-  const { data: tasks } = trpc.employee.getMyTasks.useQuery();
+  const { data: tasks = [] } = trpc.employee.getMyTasks.useQuery();
 
   const submitReportMutation = trpc.employee.submitReport.useMutation({
     onSuccess: () => {
@@ -34,39 +40,35 @@ export default function SubmitReportScreen() {
   });
 
   const handleSubmit = () => {
-  if (!taskId) {
-    Alert.alert('Error', 'Please select a task or choose Other');
-    return;
-  }
+    if (!taskId) {
+      Alert.alert('Error', 'Please select a task or choose Other');
+      return;
+    }
 
-  if (!summary.trim()) {
-    Alert.alert('Error', 'Please enter report summary');
-    return;
-  }
+    if (!summary.trim()) {
+      Alert.alert('Error', 'Please enter report summary');
+      return;
+    }
 
-  if (taskId === 'other' && !taskTitle.trim()) {
-    Alert.alert('Error', 'Please enter report title');
-    return;
-  }
+    if (taskId === 'other' && !taskTitle.trim()) {
+      Alert.alert('Error', 'Please enter report title');
+      return;
+    }
 
-  // ✅ build payload safely
-  const payload: any = {
-    summary,
-    status,
+    const payload: any = { summary, status };
+
+    if (taskId === 'other') {
+      payload.taskTitle = taskTitle;
+    } else {
+      payload.taskId = taskId;
+    }
+
+    submitReportMutation.mutate(payload);
   };
-
-  if (taskId === 'other') {
-    payload.taskTitle = taskTitle;
-  } else {
-    payload.taskId = taskId;
-  }
-
-  submitReportMutation.mutate(payload);
-};
-
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color={theme.colors.text} />
@@ -81,7 +83,7 @@ export default function SubmitReportScreen() {
           <Text style={styles.label}>Select Task</Text>
           <View style={styles.pickerWrapper}>
             <Picker
-            mode='dropdown'
+              mode="dropdown"
               selectedValue={taskId}
               onValueChange={(value) => {
                 setTaskId(value);
@@ -91,7 +93,7 @@ export default function SubmitReportScreen() {
                   return;
                 }
 
-                const selectedTask = tasks?.find((t) => t._id === value);
+                const selectedTask = tasks.find((t) => t._id === value);
                 if (selectedTask) {
                   setTaskTitle(selectedTask.title);
                 }
@@ -99,27 +101,36 @@ export default function SubmitReportScreen() {
               style={styles.picker}
               dropdownIconColor={theme.colors.text}
             >
-              <Picker.Item label="Select task..." value="" />
+              <Picker.Item
+                label="Select task..."
+                value=""
+                color={theme.colors.textSecondary}
+              />
 
-              {tasks?.map((task) => (
-                <Picker.Item key={task._id} label={task.title} value={task._id} />
+              {tasks.map((task) => (
+                <Picker.Item
+                  key={task._id}
+                  label={task.title}
+                  value={task._id}
+                  color={theme.colors.text}
+                />
               ))}
 
-              <Picker.Item label="Other (General Report)" value="other" />
+              <Picker.Item
+                label="Other (General Report)"
+                value="other"
+                color={theme.colors.text}
+              />
             </Picker>
           </View>
         </View>
 
-        {/* READ-ONLY TITLE FOR ASSIGNED TASK */}
+        {/* READ-ONLY TITLE */}
         {taskId && taskId !== 'other' && (
-          <Input
-            label="Task Title"
-            value={taskTitle}
-            editable={false}
-          />
+          <Input label="Task Title" value={taskTitle} editable={false} />
         )}
 
-        {/* EDITABLE TITLE FOR OTHER */}
+        {/* CUSTOM TITLE */}
         {taskId === 'other' && (
           <Input
             label="Report Title"
@@ -129,20 +140,32 @@ export default function SubmitReportScreen() {
           />
         )}
 
-        {/* STATUS */}
+        {/* STATUS SELECTOR */}
         <View style={styles.pickerContainer}>
           <Text style={styles.label}>Status</Text>
           <View style={styles.pickerWrapper}>
-<Picker
-  mode="dropdown"
-  selectedValue={status}
-  onValueChange={setStatus}
-  style={styles.picker}
-  dropdownIconColor={theme.colors.text}
->
-              <Picker.Item label="Completed" value="completed" />
-              <Picker.Item label="In Progress" value="in_progress" />
-              <Picker.Item label="Ongoing" value="ongoing" />
+            <Picker
+              mode="dropdown"
+              selectedValue={status}
+              onValueChange={setStatus}
+              style={styles.picker}
+              dropdownIconColor={theme.colors.text}
+            >
+              <Picker.Item
+                label="Completed"
+                value="completed"
+                color={theme.colors.text}
+              />
+              <Picker.Item
+                label="In Progress"
+                value="in_progress"
+                color={theme.colors.text}
+              />
+              <Picker.Item
+                label="Ongoing"
+                value="ongoing"
+                color={theme.colors.text}
+              />
             </Picker>
           </View>
         </View>
@@ -168,6 +191,8 @@ export default function SubmitReportScreen() {
     </SafeAreaView>
   );
 }
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -214,8 +239,8 @@ const styles = StyleSheet.create({
   },
   picker: {
     height: 52,
+    backgroundColor: theme.colors.white,
     color: theme.colors.text,
-    backgroundColor: theme.colors.white
   },
   textArea: {
     minHeight: 120,
