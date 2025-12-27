@@ -20,6 +20,7 @@ import {
   LogOut,
   User,
   TicketCheck,
+  CheckCircle2
 } from 'lucide-react-native';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
@@ -215,6 +216,16 @@ export default function AdminDashboard() {
             <Text style={styles.actionTitle}>Requests</Text>
             <Text style={styles.actionDescription}>
               Manage employee requests and queries
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/admin/pending-employees' as any)}
+          >
+            <CheckCircle2 size={28} color={theme.colors.primary} />
+            <Text style={styles.actionTitle}>Approvals</Text>
+            <Text style={styles.actionDescription}>
+              Approve or reject employee registration
             </Text>
           </TouchableOpacity>
         </View>
