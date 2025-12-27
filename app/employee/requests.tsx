@@ -6,10 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Calendar } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
@@ -22,8 +24,12 @@ export default function EmployeeRequests() {
 
   const [category, setCategory] = useState<Category>('leave');
   const [message, setMessage] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
+
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
 
   const { data: myRequests, refetch } =
     trpc.employee.getMyRequests.useQuery();
@@ -33,8 +39,8 @@ export default function EmployeeRequests() {
       onSuccess: () => {
         Alert.alert('Success', 'Request submitted successfully');
         setMessage('');
-        setFromDate('');
-        setToDate('');
+        setFromDate(null);
+        setToDate(null);
         refetch();
       },
       onError: (error) => {
@@ -59,10 +65,13 @@ export default function EmployeeRequests() {
     createRequestMutation.mutate({
       category,
       message,
-      fromDate: fromDate ? new Date(fromDate) : undefined,
-      toDate: toDate ? new Date(toDate) : undefined,
+      fromDate: fromDate ?? undefined,
+      toDate: toDate ?? undefined,
     });
   };
+
+  const formatDate = (date: Date | null) =>
+    date ? date.toISOString().split('T')[0] : 'Select date';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -118,23 +127,33 @@ export default function EmployeeRequests() {
             )}
           </View>
 
+          {/* DATE PICKERS */}
           {(category === 'leave' || category === 'wfh') && (
             <>
-              <Input
-                label="From Date (YYYY-MM-DD)"
-                value={fromDate}
-                onChangeText={setFromDate}
-                placeholder="2025-01-10"
-              />
-              <Input
-                label="To Date (YYYY-MM-DD)"
-                value={toDate}
-                onChangeText={setToDate}
-                placeholder="2025-01-12"
-              />
+            <Text style={styles.dateheadText}>From</Text>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowFromPicker(true)}
+              >
+                
+                <Calendar size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.dateText}>{formatDate(fromDate)}</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.dateheadText}>To</Text>
+
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowToPicker(true)}
+              >
+                
+                <Calendar size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.dateText}>{formatDate(toDate)}</Text>
+              </TouchableOpacity>
             </>
           )}
 
+          {/* MESSAGE */}
           <Input
             label="Message"
             value={message}
@@ -150,7 +169,7 @@ export default function EmployeeRequests() {
           />
         </View>
 
-        {/* MY REQUESTS */}
+        {/* REQUEST HISTORY */}
         <Text style={styles.sectionTitle}>Request History</Text>
 
         {myRequests?.map((req) => (
@@ -187,12 +206,40 @@ export default function EmployeeRequests() {
           </View>
         ))}
       </ScrollView>
+
+      {/* DATE PICKERS */}
+      {showFromPicker && (
+        <DateTimePicker
+          value={fromDate ?? new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(_, date) => {
+            setShowFromPicker(false);
+            if (date) setFromDate(date);
+          }}
+        />
+      )}
+
+      {showToPicker && (
+        <DateTimePicker
+          value={toDate ?? new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(_, date) => {
+            setShowToPicker(false);
+            if (date) setToDate(date);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.surface },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,28 +249,34 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
+
   headerTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: '700',
   },
+
   content: { padding: theme.spacing.lg },
+
   card: {
     backgroundColor: theme.colors.white,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.lg,
   },
+
   sectionTitle: {
     fontSize: theme.fontSize.lg,
     fontWeight: '700',
     marginBottom: theme.spacing.md,
   },
+
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.md,
   },
+
   categoryChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -231,56 +284,89 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+
   categoryActive: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
   },
+
   categoryText: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
   },
+
   categoryTextActive: {
     color: theme.colors.white,
     fontWeight: '700',
   },
+
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    padding: 14,
+    marginBottom: theme.spacing.md,
+    backgroundColor: theme.colors.white,
+  },
+
+  dateText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.sm,
+  },
+
   requestCard: {
     backgroundColor: theme.colors.white,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.md,
   },
+
   requestHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+
   requestCategory: {
     fontWeight: '700',
     color: theme.colors.primary,
   },
+
   statusBadge: {
     fontWeight: '700',
     fontSize: theme.fontSize.xs,
   },
+
   metaText: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
     marginTop: 4,
   },
+
   messageText: {
     marginTop: theme.spacing.sm,
   },
+
   replyBox: {
     marginTop: theme.spacing.md,
     padding: theme.spacing.sm,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.sm,
   },
+
   replyLabel: {
     fontSize: theme.fontSize.xs,
     fontWeight: '700',
     marginBottom: 4,
   },
+
   replyText: {
     fontSize: theme.fontSize.sm,
+  },
+  dateheadText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.text,
   },
 });
