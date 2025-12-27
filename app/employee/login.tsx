@@ -28,15 +28,33 @@ export default function LoginScreen() {
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async (data) => {
       await login(data.token, data.user);
-      router.replace(
-        data.user.role === 'admin'
-          ? '/admin/dashboard'
-          : '/employee/dashboard'
-      );
+      if (data.user.role === 'admin') {
+  router.replace('/admin/dashboard');
+} else {
+  if (data.user.status === 'pending') {
+    router.replace('/employee/pending');
+  } else if (data.user.status === 'rejected') {
+    router.replace('/employee/rejected');
+  } else {
+    router.replace('/employee/dashboard');
+  }
+}
+
     },
     onError: (error) => {
-      Alert.alert('Login Failed', error.message);
-    },
+  if (error.message.includes('awaiting')) {
+    router.replace('/employee/pending');
+    return;
+  }
+
+  if (error.message.includes('rejected')) {
+    router.replace('/employee/rejected');
+    return;
+  }
+
+  Alert.alert('Login Failed', error.message);
+},
+
   });
 
   const handleLogin = () => {

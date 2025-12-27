@@ -6,6 +6,7 @@ export interface User {
   password: string;
   name: string;
   role: 'admin' | 'employee';
+  status: 'pending' | 'approved' | 'rejected';
   phone?: string;
   address?: string;
   position?: string;
@@ -19,6 +20,7 @@ export interface UserProfile {
   email: string;
   name: string;
   role: 'admin' | 'employee';
+  status: 'pending' | 'approved' | 'rejected';
   phone?: string;
   address?: string;
   position?: string;

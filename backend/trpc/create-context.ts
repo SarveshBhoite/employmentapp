@@ -31,21 +31,44 @@ const t = initTRPC.context<Context>().create({
 export const createTRPCRouter = t.router;
 export const publicProcedure = t.procedure;
 
+/* ================= PROTECTED ================= */
+
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Not authenticated' });
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Not authenticated',
+    });
   }
+
+  // 🔒 Re-narrow user type (VERY IMPORTANT)
+  const user = ctx.user as JWTPayload;
+
+  // 🚫 Block unapproved employees
+  if (user.role === 'employee' && user.status !== 'approved') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Your account is pending admin approval',
+    });
+  }
+
   return next({
     ctx: {
       ...ctx,
-      user: ctx.user,
+      user,
     },
   });
 });
 
+/* ================= ADMIN ================= */
+
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Admin access required' });
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required',
+    });
   }
+
   return next({ ctx });
 });

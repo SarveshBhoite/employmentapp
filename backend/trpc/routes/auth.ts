@@ -1,13 +1,18 @@
 import * as z from 'zod';
 import bcrypt from 'bcryptjs';
 import { TRPCError } from '@trpc/server';
-import { createTRPCRouter, publicProcedure, protectedProcedure  } from '../create-context';
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+} from '../create-context';
 import { getDb } from '@/backend/db/mongodb';
 import { User } from '@/backend/models/user';
 import { signToken } from '@/backend/utils/jwt';
 import { ObjectId } from 'mongodb';
 
 export const authRouter = createTRPCRouter({
+  /* ================= REGISTER ================= */
   register: publicProcedure
     .input(
       z.object({
@@ -23,9 +28,15 @@ export const authRouter = createTRPCRouter({
       const db = await getDb();
       const usersCollection = db.collection<User>('users');
 
-      const existingUser = await usersCollection.findOne({ email: input.email });
+      const existingUser = await usersCollection.findOne({
+        email: input.email,
+      });
+
       if (existingUser) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Email already registered' });
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Email already registered',
+        });
       }
 
       const hashedPassword = await bcrypt.hash(input.password, 10);
@@ -35,6 +46,7 @@ export const authRouter = createTRPCRouter({
         password: hashedPassword,
         name: input.name,
         role: 'employee',
+        status: 'pending', // ✅ IMPORTANT
         phone: input.phone,
         address: input.address,
         position: input.position,
@@ -42,30 +54,18 @@ export const authRouter = createTRPCRouter({
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+console.log('REGISTER USER PAYLOAD:', newUser);
 
-      const result = await usersCollection.insertOne(newUser);
+      await usersCollection.insertOne(newUser);
 
-      const token = signToken({
-        userId: result.insertedId.toString(),
-        email: newUser.email,
-        role: newUser.role,
-      });
-
+      // ❌ DO NOT ISSUE TOKEN
       return {
-        token,
-        user: {
-          _id: result.insertedId.toString(),
-          email: newUser.email,
-          name: newUser.name,
-          role: newUser.role,
-          phone: newUser.phone,
-          address: newUser.address,
-          position: newUser.position,
-          salary: newUser.salary,
-        },
+        success: true,
+        message: 'Registration successful. Awaiting admin approval.',
       };
     }),
 
+  /* ================= LOGIN ================= */
   login: publicProcedure
     .input(
       z.object({
@@ -77,20 +77,45 @@ export const authRouter = createTRPCRouter({
       const db = await getDb();
       const usersCollection = db.collection<User>('users');
 
-      const user = await usersCollection.findOne({ email: input.email });
+      const user = await usersCollection.findOne({
+        email: input.email,
+      });
+
       if (!user) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid credentials' });
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid credentials',
+        });
       }
 
-      const isValidPassword = await bcrypt.compare(input.password, user.password);
+      const isValidPassword = await bcrypt.compare(
+        input.password,
+        user.password
+      );
+
       if (!isValidPassword) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid credentials' });
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid credentials',
+        });
+      }
+
+      // 🚫 BLOCK UNAPPROVED EMPLOYEES
+      if (user.role === 'employee' && user.status !== 'approved') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message:
+            user.status === 'pending'
+              ? 'Your account is awaiting admin approval'
+              : 'Your account has been rejected by admin',
+        });
       }
 
       const token = signToken({
         userId: user._id!.toString(),
         email: user.email,
         role: user.role,
+        status: user.status, // ✅ include
       });
 
       return {
@@ -100,6 +125,7 @@ export const authRouter = createTRPCRouter({
           email: user.email,
           name: user.name,
           role: user.role,
+          status: user.status,
           phone: user.phone,
           address: user.address,
           position: user.position,
@@ -108,56 +134,53 @@ export const authRouter = createTRPCRouter({
       };
     }),
 
-   changePassword: protectedProcedure
-  .input(
-    z.object({
-      currentPassword: z.string(),
-      newPassword: z.string().min(6),
-    })
-  )
-  .mutation(async ({ ctx, input }) => {
-    const db = await getDb();
-    const usersCollection = db.collection<User>('users');
+  /* ================= CHANGE PASSWORD ================= */
+  changePassword: protectedProcedure
+    .input(
+      z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(6),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      const usersCollection = db.collection<User>('users');
 
-    const userId = ctx.user.userId;
-
-    const user = await usersCollection.findOne({
-      _id: new ObjectId(userId),
-    });
-
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
+      const user = await usersCollection.findOne({
+        _id: new ObjectId(ctx.user.userId),
       });
-    }
 
-    const isValid = await bcrypt.compare(
-      input.currentPassword,
-      user.password
-    );
-
-    if (!isValid) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Current password is incorrect',
-      });
-    }
-
-    const hashedNewPassword = await bcrypt.hash(input.newPassword, 10);
-
-    await usersCollection.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          password: hashedNewPassword,
-          updatedAt: new Date(),
-        },
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
       }
-    );
 
-    return { success: true };
-  }),
+      const isValid = await bcrypt.compare(
+        input.currentPassword,
+        user.password
+      );
 
+      if (!isValid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Current password is incorrect',
+        });
+      }
 
+      const hashedNewPassword = await bcrypt.hash(input.newPassword, 10);
+
+      await usersCollection.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            password: hashedNewPassword,
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      return { success: true };
+    }),
 });

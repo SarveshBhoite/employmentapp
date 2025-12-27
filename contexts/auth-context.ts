@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 
 interface User {
+  status: string;
   _id: string;
   email: string;
   name: string;

@@ -9,15 +9,21 @@ export default function IndexScreen() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (user) {
-        if (user.role === 'admin') {
-          router.replace('/admin/dashboard' as any);
-        } else {
-          router.replace('/employee/dashboard' as any);
-        }
+  if (user) {
+    if (user.role === 'admin') {
+      router.replace('/admin/dashboard');
+    } else {
+      if (user.status === 'pending') {
+        router.replace('/employee/pending');
+      } else if (user.status === 'rejected') {
+        router.replace('/employee/rejected');
       } else {
-        router.replace('/employee/login');
+        router.replace('/employee/dashboard');
       }
+    }
+  } else {
+    router.replace('/employee/login');
+  }
     }
   }, [user, isLoading, router]);
 

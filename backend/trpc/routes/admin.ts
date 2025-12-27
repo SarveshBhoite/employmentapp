@@ -303,7 +303,7 @@ export const adminRouter = createTRPCRouter({
 
       return reportsWithDetails;
     }),
-    getTodayAttendanceList: adminProcedure.query(async () => {
+  getTodayAttendanceList: adminProcedure.query(async () => {
   const db = await getDb();
   const attendanceCollection = db.collection<Attendance>('attendance');
   const usersCollection = db.collection<User>('users');
@@ -467,6 +467,56 @@ workType: request.category === 'wfh' ? 'wfh' : 'leave',
 
     return { success: true };
   }),
+
+  getPendingEmployees: adminProcedure.query(async () => {
+  const db = await getDb();
+  const usersCollection = db.collection<User>('users');
+
+  const users = await usersCollection
+    .find({ role: 'employee', status: 'pending' })
+    .sort({ createdAt: -1 })
+    .toArray();
+
+  return users.map((u) => ({
+    _id: u._id!.toString(),
+    name: u.name,
+    email: u.email,
+    phone: u.phone,
+    position: u.position,
+    createdAt: u.createdAt,
+  }));
+}),
+updateEmployeeStatus: adminProcedure
+  .input(
+    z.object({
+      userId: z.string(),
+      status: z.enum(['approved', 'rejected']),
+    })
+  )
+  .mutation(async ({ input }) => {
+    const db = await getDb();
+    const usersCollection = db.collection<User>('users');
+
+    const result = await usersCollection.updateOne(
+      { _id: new ObjectId(input.userId) },
+      {
+        $set: {
+          status: input.status,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    if (!result.matchedCount) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    return { success: true };
+  }),
+
 
 
   })

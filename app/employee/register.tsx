@@ -6,11 +6,9 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
-import { useAuth } from '@/contexts/auth-context';
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,14 +17,14 @@ export default function RegisterScreen() {
   const [position, setPosition] = useState('');
 
   const registerMutation = trpc.auth.register.useMutation({
-    onSuccess: async (data) => {
-      await login(data.token, data.user);
-      router.replace('/employee/dashboard' as any);
-    },
-    onError: (error) => {
-      Alert.alert('Registration Failed', error.message);
-    },
-  });
+  onSuccess: () => {
+    router.replace('/employee/pending');
+  },
+  onError: (error) => {
+    Alert.alert('Registration Failed', error.message);
+  },
+});
+
 
   const handleRegister = () => {
     if (!name || !email || !password) {
