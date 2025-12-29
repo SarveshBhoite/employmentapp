@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
+import { Button } from '@/components/Button';
+import { router } from 'expo-router';
 
 export default function RejectedScreen() {
   return (
@@ -12,6 +14,11 @@ export default function RejectedScreen() {
           {'\n\n'}
           Please contact management for more details.
         </Text>
+        <Button
+                  title="Back to Login"
+                  onPress={() => router.replace('/employee/login')}
+                  style={{ marginTop: theme.spacing.lg }}
+                />
       </View>
     </SafeAreaView>
   );
