@@ -330,11 +330,13 @@ export const adminRouter = createTRPCRouter({
           name: { $regex: input.searchName, $options: 'i' },
         }),
       }).toArray();
+      
 
       const reports = await db.collection<Report>('reports').find({
         userId: { $in: users.map(u => u._id!) },
         ...(input.status && { status: input.status }),
-      }).toArray();
+      }).sort({ createdAt: -1 }).toArray();
+      
 
       return reports.map(r => ({
         _id: r._id!.toString(),
@@ -357,7 +359,7 @@ export const adminRouter = createTRPCRouter({
 
     const requests = await db.collection<Request>('requests').find({
       userId: { $in: users.map(u => u._id!) },
-    }).toArray();
+    }).sort({ createdAt: -1 }).toArray();
 
     return requests.map(r => ({
       _id: r._id!.toString(),
