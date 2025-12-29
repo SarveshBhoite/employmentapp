@@ -12,11 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Plus, Filter } from 'lucide-react-native';
-import { Picker } from '@react-native-picker/picker';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
+import { LightDropdown } from '@/components/LightDropdown';
 
 /* ================= TYPES ================= */
 
@@ -146,43 +146,20 @@ export default function TasksManagementScreen() {
       </View>
 
       {/* FILTER */}
-      <View style={styles.filterContainer}>
-        <Filter size={20} color={theme.colors.primary} />
-        <View style={styles.filterPickerWrapper}>
-  <Picker
-    mode="dropdown"
-    selectedValue={selectedStatus}
-    onValueChange={(value) =>
-      setSelectedStatus(value as any)
-    }
-    style={styles.picker}
-    itemStyle={styles.pickerItem}          // ✅ Android dropdown text
-    dropdownIconColor={theme.colors.text}
-  >
-    <Picker.Item
-      label="All Tasks"
-      value="all"
-      color={theme.colors.text}
-    />
-    <Picker.Item
-      label="Ongoing"
-      value="ongoing"
-      color={theme.colors.text}
-    />
-    <Picker.Item
-      label="In Progress"
-      value="in_progress"
-      color={theme.colors.text}
-    />
-    <Picker.Item
-      label="Completed"
-      value="completed"
-      color={theme.colors.text}
-    />
-  </Picker>
-</View>
+      <View style={styles.filterBar}>
+  <Filter size={20} color={theme.colors.primary} />
 
-      </View>
+  <LightDropdown
+    value={selectedStatus}
+    onChange={(v) => setSelectedStatus(v as any)}
+    options={[
+      { label: 'All Tasks', value: 'all' },
+      { label: 'Ongoing', value: 'ongoing' },
+      { label: 'In Progress', value: 'in_progress' },
+      { label: 'Completed', value: 'completed' },
+    ]}
+  />
+</View>
 
       {/* TASK LIST */}
       <FlatList
@@ -336,33 +313,37 @@ const styles = StyleSheet.create({
   },
 
   filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.white,
-    margin: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    paddingLeft: theme.spacing.md,
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: theme.spacing.sm,
+  backgroundColor: theme.colors.white,
+  borderRadius:theme.colors.border,
+  margin: theme.spacing.lg,
+},
+filterBar: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: theme.spacing.md,
 
-  filterPickerWrapper: {
-  flex: 1,
-  backgroundColor: theme.colors.white, // ✅ lock bg
-  borderRadius: theme.borderRadius.md,
-  borderWidth: 1,
-  borderColor: theme.colors.border,
-  overflow: 'hidden',
+  backgroundColor: theme.colors.white,
+  paddingHorizontal: theme.spacing.lg,
+  paddingVertical: 6,
+
+  borderRadius: theme.borderRadius.lg,
+
+  // subtle premium depth
+  shadowColor: '#000',
+  shadowOpacity: 0.05,
+  shadowRadius: 6,
+  elevation: 2,
+
+  marginHorizontal: theme.spacing.lg,
+  marginTop: theme.spacing.md,
 },
 
-picker: {
-  height: 55,
-  backgroundColor: theme.colors.white, // ✅ prevents dark mode override
-  color: theme.colors.text,            // ✅ lock text color
-},
 
-pickerItem: {
-  color: theme.colors.text,            // ✅ Android dropdown items
-  fontSize: theme.fontSize.md,
-},
+
+
 
 
   listContent: { padding: theme.spacing.lg },

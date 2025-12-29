@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
-import { Button } from '@/components/Button';
 
 export default function PendingEmployeesScreen() {
   const router = useRouter();

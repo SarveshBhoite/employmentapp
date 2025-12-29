@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { Picker } from '@react-native-picker/picker';
 import { theme } from '@/constants/theme';
 import { trpc } from '@/lib/trpc';
+import { LightDropdown } from '@/components/LightDropdown';
 
 export default function AdminAttendanceScreen() {
   const router = useRouter();
@@ -41,6 +41,13 @@ export default function AdminAttendanceScreen() {
     setSelectedYear(newYear);
   };
 
+  const employeeOptions =
+  employees?.map((emp) => ({
+    label: emp.name,
+    value: emp._id,
+  })) ?? [];
+
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
@@ -52,34 +59,16 @@ export default function AdminAttendanceScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Select Employee</Text>
-          <View style={styles.pickerWrapper}>
-  <Picker
-    mode="dropdown"
-    selectedValue={selectedUserId}
-    onValueChange={setSelectedUserId}
-    style={styles.picker}
-    dropdownIconColor={theme.colors.text}
-    itemStyle={styles.pickerItem} // ✅ IMPORTANT (Android)
-  >
-    <Picker.Item
-      label="Select an employee..."
-      value=""
-      color={theme.colors.textSecondary}
-    />
-    {employees?.map((emp) => (
-      <Picker.Item
-        key={emp._id}
-        label={emp.name}
-        value={emp._id}
-        color={theme.colors.text}
-      />
-    ))}
-  </Picker>
+        <View style={styles.dropdownContainer}>
+  <LightDropdown
+    label="Select Employee"
+    value={selectedUserId}
+    placeholder="Choose employee"
+    options={employeeOptions}
+    onChange={setSelectedUserId}
+  />
 </View>
 
-        </View>
 
         {selectedUserId && (
           <>
@@ -354,4 +343,20 @@ pickerItem: {
     fontSize: theme.fontSize.md,
     color: theme.colors.textSecondary,
   },
+  dropdownContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: theme.spacing.md,
+
+  backgroundColor: theme.colors.white,
+  paddingHorizontal: theme.spacing.lg,
+  paddingVertical: 6,
+
+  borderRadius: theme.borderRadius.lg,
+
+  shadowColor: '#000',
+  shadowOpacity: 0.05,
+  shadowRadius: 6,
+  elevation: 2,
+},
 });
